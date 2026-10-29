@@ -6,17 +6,21 @@ passed as arguments, and returned from functions.
 ## Syntax
 
 ```oxynium
-let double = fn (x: Int) Int { return x * 2 }
-let triple = fn (x: Int) Int -> x * 3
-let add    = fn (a: Int, b: Int) -> a + b
-let greet  = fn () -> print("hi")
+def main() {
+    let double = fn (x: Int) Int { return x * 2 }
+    let triple = fn (x: Int) Int -> x * 3
+    let add    = fn (a: Int, b: Int) -> a + b
+    let greet  = fn () -> print("hi")
+}
 ```
 
 The return type can be inferred with `->`. An explicit return type is written before `->`:
 
 ```oxynium
-let f = fn () Int -> 1     // explicit return type
-let g = fn () -> 1         // inferred return type
+def main() {
+    let f = fn () Int -> 1     // explicit return type
+    let g = fn () -> 1         // inferred return type
+}
 ```
 
 Anonymous functions **cannot be immediately invoked**:
@@ -28,7 +32,7 @@ Anonymous functions **cannot be immediately invoked**:
 ## Closure restriction
 
 Anonymous functions can only access global constants and top-level definitions. They cannot
-close over local variables from the enclosing function:
+close over local variables or parameters of the enclosing function:
 
 ```oxynium
 def main() {
@@ -76,7 +80,7 @@ def main() {
 An anonymous function passed with a mismatched signature is a `TypeError`:
 
 ```oxynium
-def apply(f: Fn(Int) Int) { ... }
+def apply(f: Fn(Int) Int) {}
 apply(fn (x: Int) -> "")    // TypeError: Str returned, Int expected
 ```
 

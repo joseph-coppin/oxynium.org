@@ -10,21 +10,26 @@ print(MSG)          // runs immediately
 print("World")      // runs immediately
 ```
 
+Local variables cannot be declared at the top level, even in script mode, so `let` and `for`
+(which declares its loop variables) must be inside a function. Use `main` for anything that
+needs them.
+
 **Main mode** — a `main` function is defined. Only `main`, `const`, `class`, `def`, and
-`extern def` may appear at the top level. Executable statements outside `main` are a
-`SyntaxError`:
+`extern def` may appear at the top level. Any executable statement at the top level, before
+or after `main`, is a `SyntaxError`:
 
 ```oxynium
 def f() {}
 def main() {
     print("hi")
 }
-f()           // SyntaxError: executable statement after main definition
+f()           // SyntaxError: cannot have top level statements and 'main' function
 ```
 
 ## What can appear at the top level
 
-In script mode: `const`, `class`, `def`, `extern def`, and any executable statement.
+In script mode: `const`, `class`, `def`, `extern def`, and executable statements other than
+`let` and `for`.
 In main mode: `const`, `class`, `def`, `extern def` only.
 
 ## Semicolons
@@ -37,6 +42,10 @@ print("a"); print("b")
 print("a")
 print("b")
 ```
+
+> **Note:** end-of-statement insertion currently does not happen after a line that ends with
+> a character literal (`let c = 'a'`), or before a line that starts with a character literal
+> or `!`. End the previous line with `;` in those cases.
 
 ## Declaration order
 
@@ -60,7 +69,7 @@ def main() {
     class C
     let x = new C    // C is usable here
 }
-def f(a: C)    // UnknownSymbol: C is not in scope here
+def f(a: C) {}    // UnknownSymbol: C is not in scope here
 ```
 
 ## Comments
@@ -69,10 +78,19 @@ Single-line comments start with `//` and run to the end of the line:
 
 ```oxynium
 // This entire line is a comment.
-let x = 1  // This is an inline comment.
+def main() {
+    let x = 1  // This is an inline comment.
+}
 ```
 
 There is no block comment syntax. Use multiple `//` lines.
 
 `///` is used in the standard library for documentation annotations. In user code, `///`
 behaves identically to `//`.
+
+## Reserved names
+
+The standard library reserves a number of class names for future use, including `Box`,
+`Map`, `Set`, `Vec`, `Array`, `String`, `Error`, `Test`, `Path`, `Iter` and `Iterator`
+(see `std/target-any/reserved.oxy` in the compiler). Defining a class with one of these
+names is a `TypeError`.

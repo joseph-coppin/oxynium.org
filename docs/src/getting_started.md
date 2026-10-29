@@ -47,11 +47,22 @@ The compiler binary is `oxy`. Pass a source file to compile it:
 oxy hello.oxy
 ```
 
-This produces an executable in the current directory. Run it directly:
+This produces an executable called `oxy-out` in the current directory. Run it directly:
 
 ```bash
-./hello
+./oxy-out
 ```
+
+Use `-o` to choose a different output name, e.g. `oxy hello.oxy -o hello`.
+
+You can also pass the program source on the command line with `-e`:
+
+```bash
+oxy -e 'print("Hello, world!")' && ./oxy-out
+```
+
+> **Note:** Oxynium produces x86-64 binaries only. On Apple Silicon Macs, linking does not
+> currently work out of the box.
 
 ## Hello, World
 
@@ -115,5 +126,6 @@ The compiler emits one of the following error kinds:
 | `SyntaxError`     | The source text cannot be parsed |
 | `TypeError`       | A type rule is violated |
 | `UnknownSymbol`   | A name is used that has not been declared |
-| `IoError`         | An external function is declared but not linked |
+| `IoError`         | A file can't be read, or assembling/linking fails (e.g. a called `extern def` has no implementation) |
 | `NumericOverflow` | An integer literal exceeds the 64-bit signed range |
+| `InvalidArguments`| The command-line arguments passed to `oxy` are invalid |

@@ -4,13 +4,20 @@
 
 ## Syntax
 
-```oxynium
+```text
 typeof expr
 typeof(expr)    // parentheses are optional
 ```
 
 `typeof` always returns a `Str`. Since its result is a `Str`, `typeof typeof x` is valid and
 returns `"Str"`.
+
+`typeof` applies to the whole expression after it, so `typeof 1 + 2` is `typeof (1 + 2)`.
+Wrap it in parentheses to use the result in a larger expression:
+
+```oxynium
+print((typeof 1) + "!")    // Int!
+```
 
 ## Examples
 
@@ -36,6 +43,16 @@ On functions and calls:
 def a() {}
 print(typeof a)      // Fn a() Void
 print(typeof a())    // Void
+```
+
+Generic classes show their type parameters, and anonymous functions show a
+compiler-generated name:
+
+```oxynium
+def main() {
+    print(typeof List)                 // List<T>
+    print(typeof fn (x: Int) -> x)     // e.g. Fn fn42@mainoxy(x: Int) Int
+}
 ```
 
 ## Inside generic functions

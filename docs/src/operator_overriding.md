@@ -12,8 +12,9 @@ All arithmetic operators work on `Int` operands and return `Int`. Mixing types i
 | `/`      | Integer division | `7 / 2` | `3`    |
 | `%`      | Modulo           | `7 % 2` | `1`    |
 
-Integer division truncates toward zero. Division or modulo by the literal `0` is a
-compile-time `TypeError`. Division by a runtime zero value causes undefined behaviour.
+Integer division truncates toward zero. Division by the literal `0` is a compile-time
+`TypeError`. Modulo by the literal `0`, and division or modulo by a zero value at runtime,
+crash the program (SIGFPE).
 
 Operator precedence follows standard mathematical convention:
 - `*`, `/`, `%` bind tighter than `+`, `-`
@@ -34,9 +35,13 @@ print((1 + 2 * 3 - 4 * 5 / 2).Str())  // -3
 Unary `-` applies only to `Int`. `!` applies only to `Bool`. Applying `!` to an `Int`
 is a `TypeError`.
 
+Method calls and field access bind tighter than both: `-5.abs()` is `-(5.abs())` and
+`!a.b` is `!(a.b)`.
+
 ## Comparison operators
 
-Return `Bool`. For `Int`, all six are built in. `Str` supports `==` and `!=` only.
+Return `Bool`. For `Int`, all six are built in. `Str` and `Char` support `==` and `!=` only.
+`Bool` supports none of them.
 
 | Operator | Description           |
 |----------|-----------------------|
@@ -60,11 +65,18 @@ the result of `1 < 2` is `Bool`, and `Bool < Int` is not defined.
 
 `&&` and `||` do **not** short-circuit — both sides are always evaluated.
 
+`&&` and `||` have the **same** precedence and are evaluated left to right, so
+`true || false && false` is `(true || false) && false`, which is `false`. Use parentheses
+when mixing them.
+
 ```oxynium
-true && false    // false
-true || false    // true
-!true            // false
-0 && 1           // TypeError: && requires Bool operands
+print((true && false).Str())    // false
+print((true || false).Str())    // true
+print((!true).Str())            // false
+```
+
+```oxynium
+print((0 && 1).Str())    // TypeError: cannot use operator `&&` on type `Int`
 ```
 
 ## String concatenation
@@ -72,8 +84,8 @@ true || false    // true
 `+` on two `Str` values returns a new `Str`:
 
 ```oxynium
-"Hello, " + "world!"    // "Hello, world!"
-"" + "abc"              // "abc"
+print("Hello, " + "world!")    // Hello, world!
+print("" + "abc")              // abc
 ```
 
 ## None-coalescing operator (`??`)
@@ -82,30 +94,38 @@ Unwraps an `Option<T>`. Returns the contained value if `some`, or the right-hand
 if `none`:
 
 ```oxynium
-let x: Int? = Option.none!<Int>()
-let v = x ?? 42     // v = 42
+def main() {
+    let x: Int? = Option.none!<Int>()
+    let v = x ?? 42     // v = 42
 
-let y: Int? = Option.some!<Int>(7)
-let w = y ?? 42     // w = 7
+    let y: Int? = Option.some!<Int>(7)
+    let w = y ?? 42     // w = 7
+}
 ```
+
+`??` is left-associative, so `a ?? b ?? c` is `(a ?? b) ?? c`.
 
 ## Compound assignment
 
-`+=`, `-=`, `*=`, `/=`, `%=` — see [Variables](./variables.md). These are not overloadable.
+`+=`, `-=`, `*=`, `/=`, `%=` — see [Variables](./variables.md). These can't be overloaded
+directly, but `a += b` is the same as `a = a + b`, so it works on any class that overloads `+`.
 
 ## Full precedence table (high to low)
 
-| Level | Operators                          | Associativity |
-|-------|------------------------------------|---------------|
-| 1     | unary `-`, `!`, `typeof`           | right         |
-| 2     | `*`, `/`, `%`                      | left          |
-| 3     | `+`, `-`                           | left          |
-| 4     | `<`, `>`, `<=`, `>=`              | left          |
-| 5     | `==`, `!=`                         | left          |
-| 6     | `&&`                               | left          |
-| 7     | `\|\|`                             | left          |
-| 8     | `??`                               | left          |
-| 9     | `=`, `+=`, `-=`, `*=`, `/=`, `%=` | right         |
+| Level | Operators                                      | Associativity |
+|-------|------------------------------------------------|---------------|
+| 1     | call `f()`, field/method access `.`            | left          |
+| 2     | `!`                                            | right         |
+| 3     | unary `-`                                      | right         |
+| 4     | `*`, `/`, `%`                                  | left          |
+| 5     | `+`, `-`                                       | left          |
+| 6     | `==`, `!=`, `<`, `>`, `<=`, `>=`               | left          |
+| 7     | `??`                                           | left          |
+| 8     | `&&`, `\|\|`                                   | left          |
+| 9     | `=`, `+=`, `-=`, `*=`, `/=`, `%=`              | right         |
+
+`typeof` takes a whole expression, so it binds more loosely than all of these:
+`typeof 1 + 2` is `typeof (1 + 2)`. Use `(typeof x) + "..."` to concatenate its result.
 
 ## Operator overloading
 
@@ -141,13 +161,13 @@ def main() {
 }
 ```
 
-Invalid overload forms:
+Invalid overload forms (each line is a separate error):
 
-```oxynium
+```text
 class C {
-    def ! (self) C { ... }              // SyntaxError: ! is not overloadable
-    def += (self, other: C) C { ... }   // SyntaxError: compound assignment not overloadable
-    def + (self) C { ... }              // TypeError: must take exactly one non-self parameter
+    def ! (self) C { return self }              // SyntaxError: cannot overload `!` operator
+    def += (self, other: C) C { return self }   // SyntaxError: compound assignment not overloadable
+    def + (self) C { return self }              // TypeError: must have exactly 2 parameters
 }
-def + (a: C, b: C) C { ... }           // SyntaxError: top-level operator definition
+def + (a: C, b: C) C { return a }               // SyntaxError: `+` is not a valid function name
 ```

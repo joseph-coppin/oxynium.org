@@ -1,8 +1,8 @@
 # Memory Management
 
-Oxynium does not have a garbage collector or reference counting. Memory management is manual
-for heap-allocated values, but most programs never need to think about this — `Str`, `List<T>`,
-and other standard types manage their own memory internally.
+Oxynium does not have a garbage collector or reference counting. Heap memory allocated by
+`Str`, `List<T>` and other standard types is never freed. This is fine for short-running
+programs, but long-running programs that allocate a lot will keep growing.
 
 The only explicit memory primitive is `Ptr<T>`.
 
@@ -14,7 +14,9 @@ is fully responsible for memory.
 ### Creating a pointer
 
 ```oxynium
-let p = Ptr.make!<Int>(42)
+def main() {
+    let p = Ptr.make!<Int>(42)
+}
 ```
 
 This allocates 8 bytes on the heap, stores `42`, and returns a pointer to that memory.
@@ -29,17 +31,33 @@ This allocates 8 bytes on the heap, stores `42`, and returns a pointer to that m
 | `Str`     | `(self) Str`                      | `"Ptr(<address>)"` |
 
 ```oxynium
-let p = Ptr.make!<Int>(42)
-print(p.is_null().Str())    // false
-print(p.unwrap().Str())     // 42
+def main() {
+    let p = Ptr.make!<Int>(42)
+    print(p.is_null().Str())    // false
+    print(p.unwrap().Str())     // 42
+}
+```
+
+### Freeing a pointer
+
+Memory from `Ptr.make` can be released with `LibC.free`:
+
+```oxynium
+def main() {
+    let p = Ptr.make!<Int>(42)
+    LibC.free!<Int>(p)
+    // p must not be used after this
+}
 ```
 
 ### Null pointers
 
 ```oxynium
-let null_ptr = #unchecked_cast(Ptr<Int>, 0)
-print(null_ptr.is_null().Str())    // true
-// calling null_ptr.unwrap() causes undefined behaviour
+def main() {
+    let null_ptr = #unchecked_cast(Ptr<Int>, 0)
+    print(null_ptr.is_null().Str())    // true
+    // calling null_ptr.unwrap() causes undefined behaviour
+}
 ```
 
 ### Safety
@@ -50,7 +68,7 @@ Use `Ptr<T>` only when interfacing with memory, system calls, or external C func
 
 ## Unsafe type casting (`#unchecked_cast`)
 
-```oxynium
+```text
 #unchecked_cast(TargetType, expression)
 ```
 
@@ -60,9 +78,12 @@ Equivalent to a C-style transmute.
 Common uses:
 
 ```oxynium
-#unchecked_cast(Ptr<Int>, 0)    // create a null pointer
-#unchecked_cast(Int, my_ptr)    // pointer address as integer
-#unchecked_cast(Int, 'A')       // 65
+def main() {
+    let my_ptr = Ptr.make!<Int>(1)
+    let null_ptr = #unchecked_cast(Ptr<Int>, 0)    // create a null pointer
+    let address = #unchecked_cast(Int, my_ptr)     // pointer address as integer
+    print(#unchecked_cast(Int, 'A').Str())         // 65
+}
 ```
 
 Completely unsafe. Misuse causes undefined behaviour. Prefer the safe conversion methods
@@ -72,11 +93,11 @@ Completely unsafe. Misuse causes undefined behaviour. Prefer the safe conversion
 
 For complete control over generated code, `#asm` embeds raw x86-64 NASM assembly:
 
-```oxynium
+```text
 #asm ReturnType "assembly string"
 ```
 
-Must appear inside a function body. The assembly string must be a compile-time literal.
+The assembly string must be a string literal.
 For non-`Void` return types, the assembly must push the result onto the stack.
 
 Parameters are available on the stack relative to `rbp`:

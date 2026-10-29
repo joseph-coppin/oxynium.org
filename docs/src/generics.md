@@ -5,12 +5,14 @@
 Declared with one or more type parameters in angle brackets:
 
 ```oxynium
-class Box<T> {
+class Cell<T> {
     value: T
 }
 
-let b = new Box<Int> { value: 42 }
-print(b.value.Str())    // 42
+def main() {
+    let b = new Cell<Int> { value: 42 }
+    print(b.value.Str())    // 42
+}
 ```
 
 Multiple type parameters:
@@ -21,9 +23,11 @@ class Pair<A, B> {
     second: B
 }
 
-let p = new Pair<Int, Str> { first: 1, second: "one" }
-print(p.first.Str())    // 1
-print(p.second)         // one
+def main() {
+    let p = new Pair<Int, Str> { first: 1, second: "one" }
+    print(p.first.Str())    // 1
+    print(p.second)         // one
+}
 ```
 
 Type parameters are in scope for all field declarations and method bodies within the class.
@@ -40,9 +44,11 @@ class Wrapper<T> {
         new Wrapper<U> { data: f(self.data) }
 }
 
-let w = new Wrapper<Int> { data: 5 }
-let s = w.map!<Str>(fn (n: Int) Str -> n.Str())
-print(s.data)    // 5
+def main() {
+    let w = new Wrapper<Int> { data: 5 }
+    let s = w.map!<Str>(fn (n: Int) Str -> n.Str())
+    print(s.data)    // 5
+}
 ```
 
 A method-level type parameter must not duplicate the class-level parameter name — this is a
@@ -71,9 +77,13 @@ print(apply!<Int, Int>(x, fn (n: Int) -> n + 1).Str())    // 3
 Generic functions and methods are called with `!<Type>` between the name and the argument list:
 
 ```oxynium
-identity!<Int>(42)
-List.empty!<Int>()
-list.map!<Str>(fn (n: Int, i: Int) -> n.Str())
+def identity<T>(x: T) T -> x
+
+def main() {
+    identity!<Int>(42)
+    let list = List.empty!<Int>()
+    list.map!<Str>(fn (n: Int, i: Int) -> n.Str())
+}
 ```
 
 Omitting the `!<Type>` on a generic function is a `TypeError`. Providing the wrong number
@@ -95,18 +105,25 @@ def main() {
 ## Nested generics and chaining
 
 ```oxynium
-let nested = new Box<Box<Int>> {
-    value: new Box<Int> { value: 1 }
+class Cell<T> { value: T }
+
+def main() {
+    let nested = new Cell<Cell<Int>> {
+        value: new Cell<Int> { value: 1 }
+    }
+    print(nested.value.value.Str())    // 1
 }
-print(nested.value.value.Str())    // 1
 ```
 
 Chained generic method calls:
 
 ```oxynium
-let result = List.empty!<Int>()
-    .map!<Str>(fn (n: Int, i: Int) -> n.Str())
-    .map!<Int>(fn (s: Str, i: Int) -> s.len())
+def main() {
+    let result = List.empty!<Int>()
+        .map!<Str>(fn (n: Int, i: Int) -> n.Str())
+        .map!<Int>(fn (s: Str, i: Int) -> s.len())
+    print(typeof result)    // List<Int>
+}
 ```
 
 ## Type parameters are not first-class

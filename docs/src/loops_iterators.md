@@ -3,22 +3,24 @@
 ## `if` statements
 
 ```oxynium
-if condition {
-    // body
-}
+def f(condition: Bool, other_condition: Bool) {
+    if condition {
+        // body
+    }
 
-if condition {
-    // then
-} else {
-    // else
-}
+    if condition {
+        // then
+    } else {
+        // else
+    }
 
-if condition {
-    // branch 1
-} else if other_condition {
-    // branch 2
-} else {
-    // branch 3
+    if condition {
+        // branch 1
+    } else if other_condition {
+        // branch 2
+    } else {
+        // branch 3
+    }
 }
 ```
 
@@ -26,19 +28,22 @@ The condition must have type `Bool`. Using an `Int`, `Str`, or class instance as
 is a `TypeError`:
 
 ```oxynium
-if 0 { }      // TypeError: condition must be Bool
-if "" { }     // TypeError
+if 0 { }      // TypeError: if condition must be of type Bool
 ```
 
-Parentheses around the condition are **not** allowed — `if (condition) { }` is a `SyntaxError`.
+Parentheses around the condition are not needed, but are allowed, since `(condition)` is
+just a parenthesised expression.
 
 ### Arrow syntax for single statements
 
 `->` replaces `{ }` when the body is a single statement:
 
 ```oxynium
-if x > 0 -> print("positive")
-if x > 0 -> print("positive") else print("not positive")
+def main() {
+    let x = 5
+    if x > 0 -> print("positive")
+    if x > 0 -> print("positive") else print("not positive")
+}
 ```
 
 ## `while` loops
@@ -46,12 +51,14 @@ if x > 0 -> print("positive") else print("not positive")
 **Conditional while** — runs while the condition is `Bool` true:
 
 ```oxynium
-let mut i = 0
-while i < 5 {
-    print(i.Str())
-    i += 1
+def main() {
+    let mut i = 0
+    while i < 5 {
+        print(i.Str(), "")
+        i += 1
+    }
+    // prints 01234
 }
-// prints 01234
 ```
 
 **Infinite loop** — no condition; must use `break` to exit:
@@ -66,8 +73,10 @@ while {
 **Arrow form** — single-statement body:
 
 ```oxynium
-let mut i = 0
-while i == 0 -> i = 1
+def main() {
+    let mut i = 0
+    while i == 0 -> i = 1
+}
 ```
 
 The condition (when present) must be `Bool`. `while 1 {}` is a `TypeError`.
@@ -78,12 +87,14 @@ The condition (when present) must be `Bool`. `while 1 {}` is a `TypeError`.
 inside `while` and `for` loops.
 
 ```oxynium
-let mut i = 0
-while {
-    i += 1
-    if i < 5 -> continue
-    print(i.Str())    // prints 5
-    break
+def main() {
+    let mut i = 0
+    while {
+        i += 1
+        if i < 5 -> continue
+        print(i.Str())    // prints 5
+        break
+    }
 }
 ```
 
@@ -95,7 +106,7 @@ def f() {
     while {
         i += 1
         if i > 2 -> return
-        print(i.Str())
+        print(i.Str(), "")
     }
 }
 f()    // prints 12
@@ -106,7 +117,7 @@ f()    // prints 12
 Iterates over any value that has `len()` and `at_raw()` methods. The built-in iterable types
 are `List<T>`, `Str`, and `Range`.
 
-```oxynium
+```text
 for item in collection {
     // body
 }
@@ -119,6 +130,10 @@ for item, index in collection {
 // Arrow form:
 for item in collection -> print(item.Str())
 ```
+
+`for` declares its loop variables in the enclosing function, so it can only be used inside a
+function, and each loop in a function needs its own variable names (see
+[Loop variable scope](#loop-variable-scope)).
 
 **Iterating a `List<T>`** yields values of type `T`:
 
@@ -149,21 +164,46 @@ def main() {
 **Iterating a `Range`** yields `Int` values:
 
 ```oxynium
-for i in range(5) {
-    print(i.Str())    // 01234
+def main() {
+    for i in range(5) {
+        print(i.Str(), "")    // 01234
+    }
+}
+```
+
+**Custom iterables** — any class with `len` and `at_raw` methods works:
+
+```oxynium
+class Tens {
+    def len(self) Int -> 3,
+    def at_raw(self, i: Int) Int -> i * 10
+}
+def main() {
+    let t = new Tens
+    for x in t { print(x.Str(), " ") }    // prints 0 10 20
 }
 ```
 
 Iterating over a non-iterable type (e.g. `Int`, `Bool`) is a `TypeError`.
 
-## Loop variable persistence
+## Loop variable scope
 
-Loop variables persist after the loop ends, holding the last values assigned:
+Loop variables persist after the loop ends. The item variable holds the last item. The index
+variable currently holds the number of iterations, not the last index:
 
 ```oxynium
 def main() {
     for c, i in "abc" {}
-    print(i.Str() + c.Str())    // 2c
+    print(i.Str() + c.Str())    // 3c
+}
+```
+
+Because there is no block scope, a second loop can't reuse the same variable name:
+
+```oxynium
+def main() {
+    for i in range(2) {}
+    for i in range(2) {}    // TypeError: symbol `i` is already declared
 }
 ```
 
@@ -182,9 +222,9 @@ def main() {
 ```oxynium
 def main() {
     for i in range(5) {
-        print(i.Str())
+        print(i.Str(), "")
         if i >= 3 -> continue
-        print(",")
+        print(",", "")
     }
     // prints 0,1,2,34
 }
@@ -199,7 +239,7 @@ def main() {
     arr.push(2)
     for n in arr {
         for m in "ab" {
-            print(m.Str() + n.Str())
+            print(m.Str() + n.Str(), "")
         }
     }
     // prints a1b1a2b2

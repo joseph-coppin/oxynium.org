@@ -3,7 +3,7 @@
 ## Global constants (`const`)
 
 Declared at the top level of a file (outside any function). Always require an initial value.
-Type is inferred from the value. Cannot be mutated.
+Cannot be mutated.
 
 ```oxynium
 const MAX = 100
@@ -11,11 +11,13 @@ const GREETING = "Hello"
 const PI_APPROX = 314
 ```
 
-Constants may reference expressions involving other constants:
+The value must be a non-negative integer literal or a string literal, so constants are always
+`Int` or `Str`. Expressions (including references to other constants), negative numbers and
+other types are a `SyntaxError`:
 
 ```oxynium
 const BASE = 10
-const LIMIT = BASE * 5   // LIMIT = 50
+const LIMIT = BASE * 5   // SyntaxError: can only have integers or strings as global constants
 ```
 
 Attempting to redeclare a constant with the same name is a `TypeError`. Declaring a `const`
@@ -37,8 +39,10 @@ def main() {
 An optional type annotation must match the inferred type:
 
 ```oxynium
-let x: Int = 42      // valid
-let x: Int = ""      // TypeError: mismatched types
+def main() {
+    let x: Int = 42      // valid
+    let y: Int = ""      // TypeError: mismatched types
+}
 ```
 
 Variables cannot be declared without an initial value (use `let mut` for that):
@@ -50,6 +54,8 @@ def f() {
 ```
 
 Redeclaring the same name in the same function is a `TypeError`. There is no shadowing.
+This includes `for` loop variables, so two loops in one function can't both use `i`
+(see [Scoping rules](#scoping-rules)).
 
 Declaring a `let` at the top level is a `SyntaxError`.
 
@@ -91,8 +97,12 @@ def f(condition: Bool) Int {
 }
 ```
 
-Reading an uninitialised variable is a `TypeError`. An immutable `let` cannot use the
-empty declaration form.
+Reading a variable that is never assigned before the read is a `TypeError`. An immutable
+`let` cannot use the empty declaration form.
+
+> **Warning:** the compiler does not check every path. If only some branches assign the
+> variable (e.g. an `if` without an `else`), the program compiles and reads an undefined
+> value on the other paths.
 
 ## Compound assignment operators
 
@@ -142,13 +152,22 @@ def main() {
 }
 ```
 
-For-loop variables persist after the loop ends, holding the last values seen:
+For-loop variables persist after the loop ends. The item variable holds the last item. The
+index variable currently holds the number of iterations, not the last index:
 
 ```oxynium
 def main() {
     for c, i in "abc" {}
-    // c = 'c', i = 2 — last values from the loop
-    print(i.Str() + c.Str())    // 2c
+    print(i.Str() + c.Str())    // 3c
+}
+```
+
+Because loop variables are function-scoped, reusing a loop variable name is a `TypeError`:
+
+```oxynium
+def main() {
+    for i in range(2) {}
+    for i in range(2) {}    // TypeError: symbol `i` is already declared
 }
 ```
 

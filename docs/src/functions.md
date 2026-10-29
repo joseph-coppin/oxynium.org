@@ -2,7 +2,7 @@
 
 ## Named functions (`def`)
 
-```oxynium
+```text
 def name(param1: Type1, param2: Type2) ReturnType {
     // body
 }
@@ -61,8 +61,10 @@ def f(a: Int, b: Int = 2, c: Int = 3) {
 }
 f(1)       // prints 123
 f(1, 9)    // prints 193
+```
 
-def f(a: Int = 1, b: Int) {}   // TypeError: non-default after default
+```oxynium
+def g(a: Int = 1, b: Int) {}   // TypeError: parameters after `a` must have default values
 ```
 
 The default value's type must match the parameter's type:
@@ -71,7 +73,8 @@ The default value's type must match the parameter's type:
 def f(a: Int = "") {}    // TypeError: Str default for Int parameter
 ```
 
-Trailing commas in parameter lists are allowed.
+Trailing commas are allowed in parameter lists, but not in call arguments
+(`f(1, 2,)` is a `SyntaxError`).
 
 ## Recursive functions
 
@@ -106,5 +109,10 @@ call; the linker must provide the implementation.
 extern def my_c_function(x: Int) Str;
 ```
 
-Must end with `;` — bodies are forbidden. Cannot be named `main`. Calling an unlinked external
-function produces an `IoError`.
+The trailing `;` is optional. Bodies are forbidden. Cannot be named `main`. Declaring an
+external function that isn't linked is fine, but calling it produces an `IoError` when the
+program is assembled.
+
+Always give non-`extern` functions a body (even an empty `{}`). A `def` without a body is
+currently accepted and treated like an external declaration, so it fails with an `IoError`
+only once something calls it.
